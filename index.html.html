@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SecStruct Calculator · Sana A. E. Abzakh</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+/* ════════════════════════════════════════════
+   PALETTE  (from uploaded colour swatch)
+   #6D9773  sage green    → accent / interactive
+   #0C3B2E  deep forest   → dark text / header bg
+   #BB8A52  warm tan      → secondary / warning
+   #FFBA00  golden yellow → highlight / active
+   ════════════════════════════════════════════ */
+:root {
+  /* core palette */
+  --sage:        #6D9773;
+  --sage-light:  #e8f0ea;
+  --sage-mid:    #c2d6c6;
+  --forest:      #0C3B2E;
+  --forest-mid:  #1a5c46;
+  --tan:         #BB8A52;
+  --tan-light:   #f5ead9;
+  --tan-mid:     #dfc09a;
+  --gold:        #FFBA00;
+  --gold-light:  #fff8e0;
+  --gold-mid:    #ffd966;
+
+  /* semantic aliases */
+  --bg:          #f4f5f0;
+  --surface:     #ffffff;
+  --surface2:    #eef0eb;
+  --border:      #dde0d8;
+  --border2:     #c4c9bc;
+  --text:        #0C3B2E;
+  --text-soft:   #2e5244;
+  --muted:       #6b7a6e;
+  --accent:      #6D9773;
+  --accent-dark: #4e7157;
+  --accent-light:#e8f0ea;
+  --warn:        #BB8A52;
+  --warn-light:  #f5ead9;
+  --gold:        #FFBA00;
+  --gold-light:  #fff8e0;
+  --red:         #8b1a1a;
+  --red-light:   #fde8e8;
+
+  /* pie / badge colours for structure groups */
+  --c-beta:   #0C3B2E;
+  --c-helix:  #6D9773;
+  --c-coil:   #BB8A52;
+  --c-turn:   #FFBA00;
+  --c-other:  #8b1a1a;
+
+  --mono:     'DM Mono', monospace;
+  --sans:     'Syne', sans-serif;
+  --r:        6px;
+  --rlg:      12px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { height: 100%; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ══════════════════════════════════════════
+   TOP HEADER BAR
+══════════════════════════════════════════ */
+.top-bar {
+  background: var(--forest);
+  padding: 0 2rem;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 12px rgba(12,59,46,0.18);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ── New icon: SVG α-helix + β-sheet inspired by uploaded image ── */
+.logo-mark {
+  width: 36px; height: 36px;
+  background: var(--gold);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.logo-mark svg {
+  width: 26px; height: 26px;
+}
+
+.logo-text {}
+.logo-title {
+  font-size: 16px; font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+}
+.logo-sub {
+  font-size: 10px; font-family: var(--mono);
+  color: var(--sage-mid);
+  letter-spacing: 0.04em;
+}
+
+.top-bar-right {
+  display: flex; align-items: center; gap: 10px;
+}
+.badge-engine {
+  font-size: 10px; font-family: var(--mono);
+  padding: 3px 10px; border-radius: 99px;
+  border: 1px solid rgba(109,151,115,0.5);
+  color: var(--sage-mid);
+  background: transparent;
+  transition: all 0.3s;
+}
+.badge-engine.ready {
+  color: var(--gold);
+  border-color: rgba(255,186,0,0.4);
+  background: rgba(255,186,0,0.08);
+}
+
+/* ══════════════════════════════════════════
+   INIT BANNER
+══════════════════════════════════════════ */
+.init-banner {
+  background: rgba(12,59,46,0.06);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 2rem;
+  font-size: 11px; font-family: var(--mono);
+  color: var(--muted);
+  display: flex; align-items: center; gap: 8px;
+}
+.init-banner.hidden { display: none; }
+.spinner-xs {
+  width: 12px; height: 12px; flex-shrink: 0;
+  border: 2px solid var(--border2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ══════════════════════════════════════════
+   TWO-COLUMN SPLIT LAYOUT
+══════════════════════════════════════════ */
+.split {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  grid-template-rows: 1fr;
+  min-height: calc(100vh - 56px);
+}
+
+/* LEFT PANEL */
+.panel-left {
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 1.5rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* RIGHT PANEL */
+.panel-right {
+  background: var(--bg);
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+/* ══════════════════════════════════════════
+   CARDS
+══════════════════════════════════════════ */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--rlg);
+  padding: 1.25rem;
+}
+.card + .card { margin-top: 0; }  /* gap handled by flex gap */
+
+.card-title {
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.9rem;
+  display: flex; align-items: center; gap: 6px;
+}
+.card-title-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--gold); flex-shrink: 0;
+}
+
+/* ── Documentation placeholder ── */
+.doc-placeholder {
+  border: 1.5px dashed var(--border2);
+  border-radius: var(--r);
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--muted);
+  font-size: 12px; font-family: var(--mono);
+}
+.doc-placeholder svg {
+  width: 28px; height: 28px;
+  stroke: var(--border2); fill: none; stroke-width: 1.5;
+  margin: 0 auto 8px; display: block;
+}
+.doc-placeholder strong { display: block; margin-bottom: 4px; color: var(--text-soft); font-size: 12px; }
+
+/* ── Example CSV row ── */
+.example-row {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 8px;
+  padding: 9px 12px;
+  background: var(--gold-light);
+  border: 1px solid var(--gold-mid);
+  border-radius: var(--r);
+}
+.example-row p {
+  font-size: 11px; font-family: var(--mono); color: var(--forest-mid);
+  flex: 1;
+}
+.example-row p strong { font-weight: 600; color: var(--forest); }
+
+/* ══════════════════════════════════════════
+   DROP ZONE
+══════════════════════════════════════════ */
+.dropzone {
+  border: 2px dashed var(--sage-mid);
+  border-radius: var(--rlg);
+  padding: 2rem 1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  background: var(--surface2);
+  position: relative;
+}
+.dropzone:hover, .dropzone.drag-over {
+  border-color: var(--accent);
+  background: var(--accent-light);
+}
+.dropzone input[type=file] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+}
+.drop-icon {
+  width: 42px; height: 42px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 10px;
+}
+.drop-icon svg { width: 20px; height: 20px; stroke: var(--accent); fill: none; stroke-width: 1.8; }
+.drop-title { font-size: 14px; font-weight: 600; margin-bottom: 3px; color: var(--forest); }
+.drop-sub { font-size: 11px; color: var(--muted); font-family: var(--mono); }
+
+.file-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.file-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 10px; font-family: var(--mono);
+  background: var(--accent-light); color: var(--accent-dark);
+  border: 1px solid var(--sage-mid); border-radius: 99px;
+  padding: 2px 9px;
+}
+.file-chip svg { width: 10px; height: 10px; stroke: currentColor; fill: none; stroke-width: 2.5; }
+
+/* ── Loader / Alert ── */
+.loader-wrap {
+  display: none; align-items: center; gap: 10px;
+  padding: 10px 12px;
+  background: var(--accent-light);
+  border: 1px solid var(--sage-mid);
+  border-radius: var(--r);
+  margin-top: 8px;
+  font-size: 12px; color: var(--forest);
+  font-family: var(--mono);
+}
+.loader-wrap.visible { display: flex; }
+.spinner {
+  width: 14px; height: 14px; flex-shrink: 0;
+  border: 2px solid var(--sage-mid);
+  border-top-color: var(--forest);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+.alert {
+  display: none; align-items: flex-start; gap: 8px;
+  padding: 10px 12px; border-radius: var(--r);
+  margin-top: 8px; font-size: 11px; font-family: var(--mono);
+}
+.alert.visible { display: flex; }
+.alert.error { background: var(--red-light);  border: 1px solid #f5b8b8; color: var(--red); }
+.alert.warn  { background: var(--warn-light); border: 1px solid var(--tan-mid); color: var(--warn); }
+.alert.ok    { background: var(--accent-light); border: 1px solid var(--sage-mid); color: var(--forest); }
+.alert-icon svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2.5; }
+
+/* ══════════════════════════════════════════
+   PEAK ASSIGNMENT REFERENCE TABLE
+══════════════════════════════════════════ */
+.ref-table { width: 100%; border-collapse: collapse; }
+.ref-table th {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted); text-align: left; padding: 5px 8px;
+  border-bottom: 1px solid var(--border); font-family: var(--mono);
+}
+.ref-table td {
+  padding: 6px 8px; border-bottom: 1px solid var(--border);
+  font-family: var(--mono); font-size: 10px;
+}
+.ref-table tr:last-child td { border-bottom: none; }
+.ref-table tr:hover td { background: var(--surface2); }
+.ref-sources {
+  font-size: 9px; color: var(--muted); margin-top: 7px;
+  font-family: var(--mono); line-height: 1.7;
+}
+
+/* ══════════════════════════════════════════
+   BADGES
+══════════════════════════════════════════ */
+.badge {
+  display: inline-block; font-size: 9px; font-family: var(--mono);
+  padding: 2px 6px; border-radius: 4px;
+  font-weight: 600; letter-spacing: 0.03em;
+}
+.badge-beta  { background: rgba(12,59,46,0.1);  color: var(--forest);    }
+.badge-helix { background: var(--accent-light);  color: var(--accent-dark);}
+.badge-coil  { background: var(--warn-light);    color: var(--warn);      }
+.badge-turn  { background: var(--gold-light);    color: #7a5800;          }
+.badge-unassigned { background: var(--red-light);color: var(--red);       }
+
+/* ══════════════════════════════════════════
+   BUTTONS
+══════════════════════════════════════════ */
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; font-family: var(--mono);
+  padding: 6px 13px;
+  border: 1px solid var(--border2); border-radius: var(--r);
+  cursor: pointer; background: var(--surface); color: var(--text);
+  transition: background 0.12s, border-color 0.12s;
+}
+.btn:hover { background: var(--surface2); border-color: var(--accent); }
+.btn svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 2; }
+.btn.primary { background: var(--forest); color: #fff; border-color: var(--forest); }
+.btn.primary:hover { background: var(--forest-mid); border-color: var(--forest-mid); }
+.btn.gold { background: var(--gold); color: var(--forest); border-color: var(--gold-mid); font-weight: 600; }
+.btn.gold:hover { background: var(--gold-mid); }
+.btn.sm { font-size: 10px; padding: 4px 10px; }
+
+/* ══════════════════════════════════════════
+   RIGHT PANEL — RESULTS
+══════════════════════════════════════════ */
+.empty-state {
+  height: 100%;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 3rem 2rem;
+  color: var(--muted);
+}
+.empty-state-icon {
+  width: 64px; height: 64px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 16px;
+}
+.empty-state-icon svg { width: 32px; height: 32px; stroke: var(--sage-mid); fill: none; stroke-width: 1.5; }
+.empty-state h3 { font-size: 15px; font-weight: 600; color: var(--text-soft); margin-bottom: 6px; }
+.empty-state p  { font-size: 12px; font-family: var(--mono); line-height: 1.7; }
+
+.section-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--muted);
+  margin-bottom: 0.75rem; margin-top: 1.25rem;
+  display: flex; align-items: center; gap: 8px;
+}
+.section-label:first-child { margin-top: 0; }
+.section-label::after { content:''; flex:1; height:1px; background: var(--border); }
+
+/* result card */
+.result-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--rlg);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+.result-card-title {
+  font-size: 14px; font-weight: 700; color: var(--forest);
+  margin-bottom: 1rem;
+  display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+}
+.result-card-file { font-size: 11px; font-weight: 400; color: var(--muted); font-family: var(--mono); }
+
+/* ── Metrics ── */
+.metrics {
+  display: grid; grid-template-columns: repeat(4, minmax(0,1fr));
+  gap: 8px; margin-bottom: 1rem;
+}
+.metric {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 10px; padding: 0.85rem 0.9rem;
+}
+.metric-val { font-size: 22px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; margin-bottom: 3px; }
+.metric-lbl { font-size: 10px; color: var(--muted); font-family: var(--mono); }
+.m-forest .metric-val { color: var(--forest); }
+.m-sage   .metric-val { color: var(--accent-dark); }
+.m-tan    .metric-val { color: #7a4e1a; }
+.m-gold   .metric-val { color: #7a5800; }
+
+/* ── Pie ── */
+.pie-section {
+  display: flex; align-items: center; gap: 1.5rem;
+  margin-bottom: 1rem; flex-wrap: wrap;
+}
+.pie-canvas-wrap { flex-shrink: 0; width: 160px; height: 160px; }
+.pie-legend { flex: 1; min-width: 140px; }
+.pie-legend-row { display: flex; align-items: center; gap: 7px; margin-bottom: 7px; }
+.pie-swatch { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+.pie-legend-name { font-size: 11px; font-family: var(--mono); color: var(--muted); flex: 1; }
+.pie-legend-pct  { font-size: 11px; font-family: var(--mono); font-weight: 600; color: var(--forest); }
+
+/* ── Tabs ── */
+.tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 0.85rem; }
+.tab {
+  font-size: 11px; font-family: var(--mono);
+  padding: 6px 13px; cursor: pointer;
+  color: var(--muted); border-bottom: 2px solid transparent;
+  margin-bottom: -1px; transition: color 0.12s;
+  background: none; border-left: none; border-right: none; border-top: none;
+}
+.tab:hover { color: var(--forest); }
+.tab.active { color: var(--forest); border-bottom-color: var(--gold); font-weight: 600; }
+
+.result-section { display: none; }
+.result-section.active { display: block; }
+
+/* ── Tables ── */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+thead th {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--muted); text-align: left; padding: 6px 9px;
+  border-bottom: 1px solid var(--border); font-family: var(--mono);
+}
+tbody td {
+  padding: 7px 9px; border-bottom: 1px solid var(--border);
+  font-family: var(--mono); font-size: 11px;
+}
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover td { background: var(--surface2); }
+
+/* ── Ratio chip ── */
+.ratio-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--gold-light); border: 1px solid var(--gold-mid);
+  border-radius: var(--r); padding: 5px 10px;
+  font-family: var(--mono); font-size: 11px; margin-top: 8px; color: var(--forest);
+}
+.ratio-chip strong { font-weight: 700; }
+
+.dl-row { display: flex; gap: 7px; margin-top: 10px; flex-wrap: wrap; }
+
+/* ══════════════════════════════════════════
+   SIGNATURE
+══════════════════════════════════════════ */
+.signature {
+  margin-top: 2rem;
+  padding: 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--rlg);
+  text-align: right;
+}
+.sig-rule {
+  display: inline-block; width: 80px; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold));
+  margin-bottom: 8px;
+}
+.sig-name {
+  font-family: 'Georgia', serif;
+  font-size: 16px; font-style: italic;
+  color: var(--forest); letter-spacing: 0.01em;
+  margin-bottom: 3px;
+}
+.sig-role {
+  font-size: 10px; font-family: var(--mono);
+  color: var(--muted); margin-bottom: 4px;
+}
+.sig-email {
+  font-size: 10px; font-family: var(--mono);
+  color: var(--accent-dark);
+}
+.sig-email a { color: var(--accent-dark); text-decoration: none; }
+.sig-email a:hover { text-decoration: underline; color: var(--forest); }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════
+     TOP BAR
+══════════════════════════════════════════ -->
+<div class="top-bar">
+  <div class="logo">
+    <div class="logo-mark">
+      <!--
+        Icon: FTIR spectrum bars (representing IR absorbance peaks) overlaid with
+        a small α-helix coil — combines the spectroscopy and protein structure themes.
+        Gold background, forest green strokes.
+      -->
+      <svg viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Spectrum baseline -->
+        <line x1="3" y1="21" x2="23" y2="21" stroke="#0C3B2E" stroke-width="1.3" stroke-linecap="round"/>
+        <!-- IR absorbance bars of varying heights — protein Amide I pattern -->
+        <rect x="4"   y="16" width="2" height="5" rx="0.8" fill="#0C3B2E" opacity="0.5"/>
+        <rect x="7.5" y="12" width="2" height="9" rx="0.8" fill="#0C3B2E" opacity="0.7"/>
+        <rect x="11"  y="6"  width="2.5" height="15" rx="0.8" fill="#0C3B2E"/>
+        <rect x="15"  y="10" width="2" height="11" rx="0.8" fill="#0C3B2E" opacity="0.75"/>
+        <rect x="18.5"y="14" width="2" height="7" rx="0.8" fill="#0C3B2E" opacity="0.45"/>
+        <!-- Small helix arc above the tallest bar to tie in protein structure -->
+        <path d="M9.5 4 C10.5 2.5, 12 5.5, 13.5 4 C15 2.5, 16.5 5.5, 17.5 4"
+              stroke="#0C3B2E" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+      </svg>
+    </div>
+    <div class="logo-text">
+      <div class="logo-title">SecStruct Calculator</div>
+      <div class="logo-sub">Amide I · 1600–1700 cm⁻¹ · FTIR</div>
+    </div>
+  </div>
+  <div class="top-bar-right">
+    <span class="badge-engine" id="py-badge">⏳ loading engine…</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     INIT BANNER
+══════════════════════════════════════════ -->
+<div class="init-banner" id="init-banner">
+  <div class="spinner-xs"></div>
+  <span id="init-msg">Initialising Pyodide (Python in browser) — first load ~10s, then cached…</span>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SPLIT LAYOUT
+══════════════════════════════════════════ -->
+<div class="split">
+
+  <!-- ══ LEFT PANEL ══ -->
+  <div class="panel-left">
+
+    <!-- Downloads card: example CSV + documentation PDF -->
+    <div class="card">
+      <div class="card-title"><span class="card-title-dot"></span>Downloads</div>
+
+      <!-- Example CSV download -->
+      <div class="example-row">
+        <p><strong>Example file</strong><br/>PeakFit CSV format: Peak Type, a0, a1</p>
+        <button class="btn gold sm" onclick="downloadExampleCSV()">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download
+        </button>
+      </div>
+
+      <!-- Documentation PDF download -->
+      <div class="example-row" style="margin-top:8px; background:var(--accent-light); border-color:var(--sage-mid);">
+        <p style="color:var(--forest-mid)"><strong>Documentation</strong><br/>Overview, calculations &amp; peak assignments (PDF)</p>
+        <button class="btn sm" style="background:var(--forest);color:#fff;border-color:var(--forest);" onclick="downloadDocPDF()">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download
+        </button>
+      </div>
+    </div>
+
+    <!-- Drop zone -->
+    <div class="card">
+      <div class="card-title"><span class="card-title-dot"></span>Upload PeakFit files</div>
+      <div class="dropzone" id="dropzone">
+        <input type="file" id="file-input" accept=".csv,.txt,.tsv" multiple/>
+        <div class="drop-icon">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </div>
+        <div class="drop-title">Drop files or click to browse</div>
+        <div class="drop-sub">.csv · .txt · .tsv · multiple files</div>
+      </div>
+      <div id="file-chips" class="file-chips"></div>
+      <div class="loader-wrap" id="proc-loader">
+        <div class="spinner"></div>
+        <span id="proc-msg">Processing…</span>
+      </div>
+      <div class="alert" id="proc-alert">
+        <span class="alert-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
+        <span id="proc-alert-msg"></span>
+      </div>
+    </div>
+
+    <!-- Peak assignment reference -->
+    <div class="card">
+      <div class="card-title"><span class="card-title-dot"></span>Peak assignment reference</div>
+      <table class="ref-table">
+        <thead>
+          <tr><th>Range (cm⁻¹)</th><th>Assignment</th><th>Group</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>1600–1627.9</strong></td>
+            <td><span class="badge badge-beta">Aggregated β-Sheet</span></td>
+            <td>β-Sheet</td>
+          </tr>
+          <tr>
+            <td><strong>1628–1642.9</strong></td>
+            <td><span class="badge badge-beta">β-Sheet (Main)</span></td>
+            <td>β-Sheet</td>
+          </tr>
+          <tr>
+            <td><strong>1643–1649.4</strong></td>
+            <td><span class="badge badge-coil">Random Coil</span></td>
+            <td>Random Coil</td>
+          </tr>
+          <tr>
+            <td><strong>1649.5–1659.9</strong></td>
+            <td><span class="badge badge-helix">α-Helix</span></td>
+            <td>α-Helix</td>
+          </tr>
+          <tr>
+            <td><strong>1660–1699.9 *</strong></td>
+            <td><span class="badge badge-turn">β-Turns &amp; Loops</span></td>
+            <td>β-Turns</td>
+          </tr>
+          <tr>
+            <td><strong>1680–1695</strong></td>
+            <td><span class="badge badge-beta">β-Sheet (High-Freq)</span></td>
+            <td>β-Sheet</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="ref-sources">
+        * High-Freq β-Sheet is checked before β-Turns (sub-range priority).<br/>
+        Refs: Sadat &amp; Joye 2020 · Yan et al. 2017 · Sukumaran 2017
+      </p>
+    </div>
+
+    <!-- Signature -->
+    <div class="signature">
+      <div class="sig-rule"></div>
+      <div class="sig-name">Sana A. E. Abzakh</div>
+      <div class="sig-role">Secondary Structure Calculator · Amide I FTIR Analysis</div>
+      <div class="sig-email"><a href="mailto:sanaabzakh262@gmail.com">sanaabzakh262@gmail.com</a></div>
+    </div>
+
+  </div><!-- /panel-left -->
+
+  <!-- ══ RIGHT PANEL ══ -->
+  <div class="panel-right" id="panel-right">
+
+    <div id="empty-state" class="empty-state">
+      <div class="empty-state-icon">
+        <svg viewBox="0 0 24 24"><path d="M2 20h20M6 20V10M12 20V4M18 20v-6"/></svg>
+      </div>
+      <h3>No results yet</h3>
+      <p>Upload one or more PeakFit output files<br/>using the panel on the left.<br/><br/>Results will appear here automatically.</p>
+    </div>
+
+    <div id="results-area"></div>
+    <div id="comparison-area"></div>
+
+  </div><!-- /panel-right -->
+
+</div><!-- /split -->
+
+<!-- ════════════════════════════════════════
+     EMBEDDED PYTHON
+════════════════════════════════════════ -->
+<script id="py-src" type="text/x-python">
+import re, json
+from pathlib import Path
+from dataclasses import dataclass
+from typing import List, Dict, Tuple, Optional
+
+PARSE_WINDOW_MIN: float = 1590.0
+PARSE_WINDOW_MAX: float = 1720.0
+AMIDE_I_MIN: float = 1600.0
+AMIDE_I_MAX: float = 1700.0
+AREA_CEILING: float = 1e7
+
+ASSIGNMENT_ORDER: List[Tuple[str, float, float, str]] = [
+    ("Aggregated \u03b2-Sheet",  1600.0, 1627.9, "\u03b2-Sheet"),
+    ("\u03b2-Sheet (Main)",      1628.0, 1642.9, "\u03b2-Sheet"),
+    ("Random Coil",              1643.0, 1649.4, "Random Coil"),
+    ("\u03b1-Helix",             1649.5, 1659.9, "\u03b1-Helix"),
+    ("\u03b2-Sheet (High-Freq)", 1680.0, 1695.0, "\u03b2-Sheet"),
+    ("\u03b2-Turns & Loops",     1660.0, 1699.9, "\u03b2-Turns"),
+]
+GROUP_DISPLAY_ORDER = ["\u03b2-Sheet","\u03b1-Helix","Random Coil","\u03b2-Turns","Unassigned"]
+
+@dataclass
+class Peak:
+    number: int
+    area: float
+    center: float
+    def __post_init__(self):
+        if self.area <= 0:
+            raise ValueError(f"Peak {self.number} non-positive area")
+        if not (1000.0 <= self.center <= 4000.0):
+            raise ValueError(f"Peak {self.number} unrealistic center")
+
+def assign_structure(wn):
+    for label, lo, hi, group in ASSIGNMENT_ORDER:
+        if lo <= wn <= hi:
+            return label, group
+    return "Unassigned", "Unassigned"
+
+def _try_float(val):
+    try: return float(val.replace(",","."))
+    except: return None
+
+def _find_header_indices(headers):
+    ai = ci = None
+    for i, h in enumerate(headers):
+        h = h.strip().lower()
+        if re.search(r"\ba0\b|area", h): ai = i
+        if re.search(r"\ba1\b|center|wavenumber|position", h): ci = i
+    return ai, ci
+
+def _alpha_beta_ratio(gs):
+    a = gs.get("\u03b1-Helix", 0.0)
+    b = gs.get("\u03b2-Sheet", 0.0)
+    return (a/b) if b > 0 else None
+
+def _parse_delimited(lines, delim):
+    peaks, header_row, ai, ci = [], None, None, None
+    for lineno, line in enumerate(lines):
+        if not line.strip() or line.strip().startswith("#"): continue
+        parts = [p.strip() for p in line.split(delim)]
+        if len(parts) < 2: continue
+        if header_row is None:
+            a, c = _find_header_indices([p.lower() for p in parts])
+            if a is not None and c is not None:
+                header_row, ai, ci = lineno, a, c
+            continue
+        if len(parts) <= max(ai, ci): continue
+        area = _try_float(parts[ai]); center = _try_float(parts[ci])
+        if area and center and PARSE_WINDOW_MIN <= center <= PARSE_WINDOW_MAX:
+            try: peaks.append(Peak(len(peaks)+1, area, center))
+            except: pass
+    return peaks
+
+def _parse_whitespace(lines):
+    peaks, header_row, ai, ci = [], None, None, None
+    for lineno, line in enumerate(lines):
+        if not line.strip() or line.strip().startswith("#"): continue
+        parts = line.split()
+        if len(parts) < 2: continue
+        if header_row is None:
+            a, c = _find_header_indices([p.lower() for p in parts])
+            if a is not None and c is not None:
+                header_row, ai, ci = lineno, a, c
+            continue
+        if len(parts) <= max(ai, ci): continue
+        area = _try_float(parts[ai]); center = _try_float(parts[ci])
+        if area and center and PARSE_WINDOW_MIN <= center <= PARSE_WINDOW_MAX:
+            try: peaks.append(Peak(len(peaks)+1, area, center))
+            except: pass
+    return peaks
+
+def _parse_fallback(lines):
+    peaks = []
+    for line in lines:
+        floats = [f for p in line.split() if (f:=_try_float(p)) is not None]
+        if len(floats) < 2: continue
+        for f1,f2 in [(floats[0],floats[1]),(floats[1],floats[0])]:
+            if PARSE_WINDOW_MIN<=f1<=PARSE_WINDOW_MAX and 0<f2<AREA_CEILING:
+                try: peaks.append(Peak(len(peaks)+1, f2, f1))
+                except: pass
+                break
+    return peaks
+
+def _filter(peaks, src):
+    f = [p for p in peaks if AMIDE_I_MIN<=p.center<=AMIDE_I_MAX]
+    w = []
+    if peaks and not f:
+        w.append(f"No peaks in Amide I region. Check file.")
+    return f, w
+
+def parse_content(content, filename):
+    lines = [l.rstrip() for l in content.splitlines()]
+    for delim in (",","\t",";"):
+        try:
+            pk = _parse_delimited(lines, delim)
+            if pk: return _filter(pk, filename)
+        except: pass
+    try:
+        pk = _parse_whitespace(lines)
+        if pk: return _filter(pk, filename)
+    except: pass
+    return _filter(_parse_fallback(lines), filename)
+
+def calculate(peaks):
+    total = sum(p.area for p in peaks)
+    if total == 0: raise ValueError("Total area is zero.")
+    details, gt = [], {}
+    for p in peaks:
+        label, group = assign_structure(p.center)
+        pct = p.area/total*100.0
+        details.append({"peak":p.number,"area":p.area,"center":p.center,
+                        "detail_label":label,"group":group,"pct":pct})
+        gt[group] = gt.get(group,0.0)+p.area
+    return details, {g:v/total*100.0 for g,v in gt.items()}, total
+
+def analyze_for_web(content, filename):
+    sample_name = Path(filename).stem
+    try:
+        peaks, warnings = parse_content(content, filename)
+        if not peaks:
+            return json.dumps({"error":"No peaks found in Amide I region (1600\u20131700 cm\u207b\u00b9)."})
+        details, group_summary, total_area = calculate(peaks)
+        return json.dumps({
+            "sample_name": sample_name, "filename": filename,
+            "total_area": total_area, "peak_count": len(peaks),
+            "peak_details": details, "group_summary": group_summary,
+            "group_order": GROUP_DISPLAY_ORDER,
+            "ratio": _alpha_beta_ratio(group_summary),
+            "warnings": warnings,
+        })
+    except Exception as e:
+        return json.dumps({"error": str(e)})
+</script>
+
+<!-- ════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════ -->
+<script src="https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js"></script>
+<script>
+'use strict';
+let pyodide = null, allResults = [];
+
+/* ── Palette-matched colour map ── */
+const GROUP_COLORS = {
+  '\u03b2-Sheet': { pie:'#0C3B2E', badge:'badge-beta'       },
+  '\u03b1-Helix': { pie:'#6D9773', badge:'badge-helix'      },
+  'Random Coil':  { pie:'#BB8A52', badge:'badge-coil'       },
+  '\u03b2-Turns': { pie:'#FFBA00', badge:'badge-turn'       },
+  'Unassigned':   { pie:'#8b1a1a', badge:'badge-unassigned' },
+};
+const METRIC_CLS = {
+  '\u03b2-Sheet':'m-forest', '\u03b1-Helix':'m-sage',
+  'Random Coil':'m-tan', '\u03b2-Turns':'m-gold'
+};
+
+/* ── Example CSV (real 135 Control data) ── */
+const EXAMPLE_CSV = `Peak  Type,a0,a1
+1  Gauss Area,1.59058735,1487.10655
+2  Gauss Area,1.92563363,1510.16619
+3  Gauss Area,2.82564455,1529.90185
+4  Gauss Area,3.7231001,1549.42688
+5  Gauss Area,2.44687929,1569.22292
+6  Gauss Area,2.09969959,1587.17638
+7  Gauss Area,1.80231056,1603.71957
+8  Gauss Area,1.56965764,1615.06068
+9  Gauss Area,3.23420479,1628.15919
+10  Gauss Area,4.50951954,1641.82573
+11  Gauss Area,5.75423649,1658.12803
+12  Gauss Area,3.14674435,1674.97106
+13  Gauss Area,2.0568764,1690.26538
+14  Gauss Area,1.25212566,1710.00948
+15  Gauss Area,0.75688269,1727.62581
+16  Gauss Area,0.44406329,1744.02806
+17  Gauss Area,0.19344633,1763.21644
+18  Gauss Area,0.22268478,1763.25189`;
+
+function downloadExampleCSV() {
+  const blob = new Blob([EXAMPLE_CSV], {type:'text/csv;charset=utf-8;'});
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(blob), download:'example_peakfit_output.csv'
+  });
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+/* ── Init Pyodide ── */
+async function initPyodide() {
+  const banner = document.getElementById('init-banner');
+  const msg    = document.getElementById('init-msg');
+  const badge  = document.getElementById('py-badge');
+  try {
+    pyodide = await loadPyodide();
+    await pyodide.runPythonAsync(document.getElementById('py-src').textContent);
+    banner.classList.add('hidden');
+    badge.textContent = '✓ Python ready';
+    badge.classList.add('ready');
+  } catch(e) {
+    msg.textContent = 'Failed to load Python engine: ' + e.message;
+  }
+}
+initPyodide();
+
+/* ── Drag & drop ── */
+const dz = document.getElementById('dropzone');
+dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag-over'); handleFiles(e.dataTransfer.files); });
+document.getElementById('file-input').addEventListener('change', e => { handleFiles(e.target.files); e.target.value=''; });
+
+/* ── Process files ── */
+async function handleFiles(fileList) {
+  if (!pyodide) { showAlert('error','Python engine not ready yet. Please wait.'); return; }
+  const loader = document.getElementById('proc-loader');
+  document.getElementById('proc-alert').className = 'alert';
+
+  for (const file of fileList) {
+    loader.className = 'loader-wrap visible';
+    document.getElementById('proc-msg').textContent = `Processing ${file.name}…`;
+    try {
+      const text = await file.text();
+      pyodide.globals.set('_wc', text);
+      pyodide.globals.set('_wf', file.name);
+      const result = JSON.parse(pyodide.runPython('analyze_for_web(_wc,_wf)'));
+      if (result.error) {
+        showAlert('error', `${file.name}: ${result.error}`);
+      } else {
+        addChip(result);
+        allResults.push(result);
+        document.getElementById('empty-state').style.display = 'none';
+        renderResult(result);
+        if (result.warnings?.length) showAlert('warn', result.warnings.join(' | '));
+        updateComparison();
+      }
+    } catch(e) { showAlert('error', `${file.name}: ${e.message}`); }
+  }
+  loader.className = 'loader-wrap';
+}
+
+function showAlert(type, msg) {
+  const el = document.getElementById('proc-alert');
+  el.className = `alert visible ${type}`;
+  document.getElementById('proc-alert-msg').textContent = msg;
+}
+function addChip(r) {
+  const c = document.createElement('div');
+  c.className = 'file-chip';
+  c.innerHTML = `<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>${escHtml(r.sample_name)} (${r.peak_count} peaks)`;
+  document.getElementById('file-chips').appendChild(c);
+}
+
+/* ── Pie chart ── */
+function drawPie(canvasId, gs, order) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const cx = canvas.width/2, cy = canvas.height/2, r = Math.min(cx,cy)-3;
+  const slices = order.filter(g => g in gs && gs[g]>0)
+    .map(g => ({ pct: gs[g], color: (GROUP_COLORS[g]||{pie:'#aaa'}).pie }));
+  const total = slices.reduce((s,sl)=>s+sl.pct,0);
+  let angle = -Math.PI/2;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  slices.forEach(sl => {
+    const sweep = sl.pct/total*2*Math.PI;
+    ctx.beginPath(); ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,r,angle,angle+sweep); ctx.closePath();
+    ctx.fillStyle = sl.color; ctx.fill();
+    ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke();
+    angle += sweep;
+  });
+  /* donut hole */
+  ctx.beginPath(); ctx.arc(cx,cy,r*0.42,0,2*Math.PI);
+  ctx.fillStyle='#fff'; ctx.fill();
+}
+
+/* ── Render result ── */
+function renderResult(r) {
+  const area = document.getElementById('results-area');
+  if (allResults.length===1) {
+    const lbl = document.createElement('div');
+    lbl.className='section-label'; lbl.textContent='Results';
+    area.appendChild(lbl);
+  }
+  const card = document.createElement('div');
+  card.className = 'result-card';
+  card.id = `result-${sanitizeId(r.sample_name)}`;
+  const gs = r.group_summary, go = r.group_order, sid = sanitizeId(r.sample_name);
+  const cid = `pie-${sid}`;
+
+  const metricsHtml = ['\u03b2-Sheet','\u03b1-Helix','\u03b2-Turns','Random Coil'].map(g=>`
+    <div class="metric ${METRIC_CLS[g]||''}">
+      <div class="metric-val">${(gs[g]??0).toFixed(1)}%</div>
+      <div class="metric-lbl">${escHtml(g)}</div>
+    </div>`).join('');
+
+  const legendHtml = go.filter(g=>g in gs && gs[g]>0).map(g=>`
+    <div class="pie-legend-row">
+      <div class="pie-swatch" style="background:${(GROUP_COLORS[g]||{pie:'#aaa'}).pie}"></div>
+      <span class="pie-legend-name">${escHtml(g)}</span>
+      <span class="pie-legend-pct">${gs[g].toFixed(2)}%</span>
+    </div>`).join('');
+
+  const summaryRows = go.filter(g=>g in gs).map(g=>`
+    <tr>
+      <td><span class="badge ${(GROUP_COLORS[g]||{badge:'badge-unassigned'}).badge}">${escHtml(g)}</span></td>
+      <td>${gs[g].toFixed(2)}%</td>
+    </tr>`).join('');
+
+  const peakRows = r.peak_details.map(d=>`
+    <tr>
+      <td>${d.peak}</td><td>${d.center.toFixed(2)}</td><td>${d.area.toFixed(5)}</td>
+      <td><span class="badge ${(GROUP_COLORS[d.group]||{badge:'badge-unassigned'}).badge}">${escHtml(d.detail_label)}</span></td>
+      <td>${d.group}</td><td>${d.pct.toFixed(2)}%</td>
+    </tr>`).join('');
+
+  const ratio = r.ratio!=null ? r.ratio.toFixed(3) : 'N/A';
+  const ratioHtml = r.ratio!=null
+    ? `<div class="ratio-chip">\u03b1/\u03b2 ratio: <strong>${ratio}</strong>&nbsp;&nbsp;
+       \u03b1 ${(gs['\u03b1-Helix']??0).toFixed(2)}% / \u03b2 ${(gs['\u03b2-Sheet']??0).toFixed(2)}%</div>` : '';
+
+  card.innerHTML = `
+    <div class="result-card-title">
+      ${escHtml(r.sample_name)}
+      <span class="result-card-file">${escHtml(r.filename)}</span>
+    </div>
+    <div class="metrics">${metricsHtml}</div>
+    <div class="pie-section">
+      <div class="pie-canvas-wrap"><canvas id="${cid}" width="160" height="160"></canvas></div>
+      <div class="pie-legend">${legendHtml}</div>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab(this,'gs-${sid}')">Group summary</button>
+      <button class="tab"        onclick="switchTab(this,'pd-${sid}')">Peak detail</button>
+    </div>
+    <div id="gs-${sid}" class="result-section active">
+      <div class="table-wrap"><table>
+        <thead><tr><th>Group</th><th>% Contribution</th></tr></thead>
+        <tbody>${summaryRows}</tbody>
+      </table></div>
+    </div>
+    <div id="pd-${sid}" class="result-section">
+      <div class="table-wrap"><table>
+        <thead><tr><th>#</th><th>Center (cm\u207b\u00b9)</th><th>Area</th><th>Assignment</th><th>Group</th><th>%</th></tr></thead>
+        <tbody>${peakRows}</tbody>
+      </table></div>
+    </div>
+    ${ratioHtml}
+    <div class="dl-row">
+      <button class="btn" onclick="downloadTXT('${sid}')">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download TXT
+      </button>
+    </div>`;
+
+  area.appendChild(card);
+  card.__result = r;
+  requestAnimationFrame(() => drawPie(cid, gs, go));
+}
+
+function switchTab(btn, id) {
+  const card = btn.closest('.result-card') || btn.closest('.card');
+  card.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  card.querySelectorAll('.result-section').forEach(s=>s.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(id).classList.add('active');
+}
+
+/* ── Comparison ── */
+function updateComparison() {
+  if (allResults.length < 2) return;
+  const area = document.getElementById('comparison-area');
+  area.innerHTML = '';
+  const lbl = document.createElement('div');
+  lbl.className='section-label'; lbl.textContent='Multi-sample comparison';
+  area.appendChild(lbl);
+
+  const card = document.createElement('div');
+  card.className = 'result-card';
+  const groups = ['\u03b2-Sheet','\u03b1-Helix','Random Coil','\u03b2-Turns'];
+  const hcols  = groups.map(g=>`<th>${escHtml(g)}</th>`).join('');
+  const rows   = allResults.map(r=>{
+    const gs=r.group_summary, ratio=r.ratio!=null?r.ratio.toFixed(3):'N/A';
+    return `<tr><td style="font-weight:700">${escHtml(r.sample_name)}</td>
+      ${groups.map(g=>`<td>${(gs[g]??0).toFixed(2)}%</td>`).join('')}
+      <td>${ratio}</td></tr>`;
+  }).join('');
+  card.innerHTML = `
+    <div class="result-card-title">Comparison — ${allResults.length} samples</div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Sample</th>${hcols}<th>\u03b1/\u03b2</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>
+    <div class="dl-row">
+      <button class="btn primary" onclick="downloadComparisonTXT()">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Download comparison TXT
+      </button>
+    </div>`;
+  area.appendChild(card);
+}
+
+/* ── TXT downloads ── */
+function downloadTXT(sid) {
+  const card = document.getElementById(`result-${sid}`);
+  const r = card.__result, gs = r.group_summary;
+  const ratio = r.ratio != null ? r.ratio.toFixed(3) : 'N/A';
+  const sep   = '='.repeat(60);
+  const dash  = '-'.repeat(60);
+
+  let lines = [
+    sep,
+    `  PROTEIN SECONDARY STRUCTURE CALCULATOR`,
+    `  Sample: ${r.sample_name}`,
+    `  File:   ${r.filename}`,
+    `  Total Amide I Area: ${r.total_area.toFixed(5)}`,
+    sep, '',
+    `  PEAK DETAIL`,
+    `  ${'#'.padEnd(5)}  ${'Center (cm-1)'.padEnd(14)}  ${'Area'.padEnd(12)}  ${'Assignment'.padEnd(28)}  ${'Group'.padEnd(15)}  ${'%'.padStart(7)}`,
+    '  ' + dash,
+  ];
+  r.peak_details.forEach(d => {
+    lines.push(
+      `  ${String(d.peak).padEnd(5)}  ${d.center.toFixed(2).padEnd(14)}  ${d.area.toFixed(5).padEnd(12)}  ${d.detail_label.padEnd(28)}  ${d.group.padEnd(15)}  ${d.pct.toFixed(2).padStart(6)}%`
+    );
+  });
+  lines.push('', `  GROUP SUMMARY`, '  ' + dash);
+  r.group_order.filter(g => g in gs).forEach(g => {
+    lines.push(`  ${g.padEnd(30)}  ${gs[g].toFixed(2).padStart(6)}%`);
+  });
+  lines.push('', `  \u03b1/\u03b2 Ratio: ${ratio}`);
+  lines.push('', sep);
+
+  triggerDownload(lines.join('\n'), `${r.sample_name}_secondary_structure.txt`, 'text/plain');
+}
+
+function downloadComparisonTXT() {
+  const groups = ['\u03b2-Sheet','\u03b1-Helix','Random Coil','\u03b2-Turns','Unassigned'];
+  const sep  = '='.repeat(70);
+  const dash = '-'.repeat(70);
+  let lines  = [sep, '  MULTI-SAMPLE COMPARISON', sep, ''];
+  const hdr  = `  ${'Sample'.padEnd(25)}  ${groups.map(g=>g.padEnd(12)).join('  ')}  ${'a/b'.padStart(6)}`;
+  lines.push(hdr, '  ' + dash);
+  allResults.forEach(r => {
+    const gs  = r.group_summary;
+    const row = `  ${r.sample_name.padEnd(25)}  ${groups.map(g=>(gs[g]??0).toFixed(2).padEnd(12)).join('  ')}  ${r.ratio!=null?r.ratio.toFixed(3).padStart(6):'   N/A'}`;
+    lines.push(row);
+  });
+  lines.push('', sep);
+  triggerDownload(lines.join('\n'), 'comparison_secondary_structure.txt', 'text/plain');
+}
+
+function triggerDownload(content, filename, mimeType) {
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([content], {type: mimeType + ';charset=utf-8;'})),
+    download: filename
+  });
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+/* ── Documentation PDF download (PDF embedded as base64) ── */
+const DOC_PDF_B64 = "JVBERi0xLjQKJZOMi54gUmVwb3J0TGFiIEdlbmVyYXRlZCBQREYgZG9jdW1lbnQgKG9wZW5zb3VyY2UpCjEgMCBvYmoKPDwKL0YxIDIgMCBSIC9GMiAzIDAgUiAvRjMgNCAwIFIgL0Y0IDUgMCBSIC9GNSA2IDAgUiAvRjYgOCAwIFIKPj4KZW5kb2JqCjIgMCBvYmoKPDwKL0Jhc2VGb250IC9IZWx2ZXRpY2EgL0VuY29kaW5nIC9XaW5BbnNpRW5jb2RpbmcgL05hbWUgL0YxIC9TdWJ0eXBlIC9UeXBlMSAvVHlwZSAvRm9udAo+PgplbmRvYmoKMyAwIG9iago8PAovQmFzZUZvbnQgL0hlbHZldGljYS1Cb2xkIC9FbmNvZGluZyAvV2luQW5zaUVuY29kaW5nIC9OYW1lIC9GMiAvU3VidHlwZSAvVHlwZTEgL1R5cGUgL0ZvbnQKPj4KZW5kb2JqCjQgMCBvYmoKPDwKL0Jhc2VGb250IC9TeW1ib2wgL05hbWUgL0YzIC9TdWJ0eXBlIC9UeXBlMSAvVHlwZSAvRm9udAo+PgplbmRvYmoKNSAwIG9iago8PAovQmFzZUZvbnQgL0NvdXJpZXIgL0VuY29kaW5nIC9XaW5BbnNpRW5jb2RpbmcgL05hbWUgL0Y0IC9TdWJ0eXBlIC9UeXBlMSAvVHlwZSAvRm9udAo+PgplbmRvYmoKNiAwIG9iago8PAovQmFzZUZvbnQgL1phcGZEaW5nYmF0cyAvTmFtZSAvRjUgL1N1YnR5cGUgL1R5cGUxIC9UeXBlIC9Gb250Cj4+CmVuZG9iago3IDAgb2JqCjw8Ci9Db250ZW50cyAxMyAwIFIgL01lZGlhQm94IFsgMCAwIDU5NS4yNzU2IDg0MS44ODk4IF0gL1BhcmVudCAxMiAwIFIgL1Jlc291cmNlcyA8PAovRm9udCAxIDAgUiAvUHJvY1NldCBbIC9QREYgL1RleHQgL0ltYWdlQiAvSW1hZ2VDIC9JbWFnZUkgXQo+PiAvUm90YXRlIDAgL1RyYW5zIDw8Cgo+PiAKICAvVHlwZSAvUGFnZQo+PgplbmRvYmoKOCAwIG9iago8PAovQmFzZUZvbnQgL0hlbHZldGljYS1PYmxpcXVlIC9FbmNvZGluZyAvV2luQW5zaUVuY29kaW5nIC9OYW1lIC9GNiAvU3VidHlwZSAvVHlwZTEgL1R5cGUgL0ZvbnQKPj4KZW5kb2JqCjkgMCBvYmoKPDwKL0NvbnRlbnRzIDE0IDAgUiAvTWVkaWFCb3ggWyAwIDAgNTk1LjI3NTYgODQxLjg4OTggXSAvUGFyZW50IDEyIDAgUiAvUmVzb3VyY2VzIDw8Ci9Gb250IDEgMCBSIC9Qcm9jU2V0IFsgL1BERiAvVGV4dCAvSW1hZ2VCIC9JbWFnZUMgL0ltYWdlSSBdCj4+IC9Sb3RhdGUgMCAvVHJhbnMgPDwKCj4+IAogIC9UeXBlIC9QYWdlCj4+CmVuZG9iagoxMCAwIG9iago8PAovUGFnZU1vZGUgL1VzZU5vbmUgL1BhZ2VzIDEyIDAgUiAvVHlwZSAvQ2F0YWxvZwo+PgplbmRvYmoKMTEgMCBvYmoKPDwKL0F1dGhvciAoXChhbm9ueW1vdXNcKSkgL0NyZWF0aW9uRGF0ZSAoRDoyMDI2MDUwMjE2MDgyMyswMCcwMCcpIC9DcmVhdG9yIChcKHVuc3BlY2lmaWVkXCkpIC9LZXl3b3JkcyAoKSAvTW9kRGF0ZSAoRDoyMDI2MDUwMjE2MDgyMyswMCcwMCcpIC9Qcm9kdWNlciAoUmVwb3J0TGFiIFBERiBMaWJyYXJ5IC0gXChvcGVuc291cmNlXCkpIAogIC9TdWJqZWN0IChcKHVuc3BlY2lmaWVkXCkpIC9UaXRsZSAoXChhbm9ueW1vdXNcKSkgL1RyYXBwZWQgL0ZhbHNlCj4+CmVuZG9iagoxMiAwIG9iago8PAovQ291bnQgMiAvS2lkcyBbIDcgMCBSIDkgMCBSIF0gL1R5cGUgL1BhZ2VzCj4+CmVuZG9iagoxMyAwIG9iago8PAovRmlsdGVyIFsgL0FTQ0lJODVEZWNvZGUgL0ZsYXRlRGVjb2RlIF0gL0xlbmd0aCAxODk2Cj4+CnN0cmVhbQpHYiEjXGFgPy0qJkFAWmNxTjw8aC0sREJpNF1PXGU4c0l0ImItSFtGMC1FNSJhMlVHVSZZbSo6cEwjOU1VKk0kWzdBPExyMF4uVzNJWjVDaEAvLnE8cyVyamU1KEwrJCo0VU4sJGYhS2cjbF0/XUsjUDNRaUw5QkBqN2cvbShQV0M+NzEtMHRmPSk0T3EmVWVoJGUjWmltSVkwS2diMCdAbDt0XSgxcW01LSpNKiJjLVg+Yi06aFwzY19AVWcxT01MRW43ZV5KIzczdTJvRUUnbmNSSDRFIWlPQWxbKmI+OENqUkVaXj9RZixgQUJELSlLRD9pWVs8SW43TkolZ10nN0A8QlgjLGJXJFdSVERiYlY+SFs0b0wsVlldbkJaUDg0VkQkcGtKQWREJDdgV25lVzdkTjMlNEUsOyw2Tz8tZU9ocis5RUZKY09xckpqLyVbaGBsLD0hcj82OSNcISxiP0JUYTFlZiQjLzJbZj9YbV9MbTBwJU9lUSZFOSZdZz0tX2E4OCEyVT4hcDtGKDdiXGRAc3VXNUdRU2chTlhGZzlNJk1CMk9yOFslJU5NblU2JTZpR2kuZyonVHF0OF5nNFMtY2hmYjtvZ2VGOkpFcTVfIjtcRltwJTkjM1J0J0xBI2BZJ10hVC1vZk5nN1IyPlBJLFhQV08zUDNuXD9WbChoTztgOUFFJCcrRyosQjAuI2wkNUlSJDdwaENLTHRoXGQzMDIvKTYjO2o8I1w/PF4wS3RSJCluUDAnbm5CLD1WZW1qW2lfJ10uRCFZTmc8Ky03QS8oTUlwdFJaUlREaS83QTFAKzxWLiRALydXT0tyNDFORDQ+ZmR0OzRBNi1pU0E5byVSdGokIz8wUDZtXW4mUj9HdCwnKHBfSUZyN2Z0MCMtQ0NfXUE5JFVuKW04QThORGxDc1FEMEVeIVNzJmRWciJRQTVtLF4yVDNVZTRaSVArIk4zLmJQXEJDZmtHUGFQV05jNWY9XV06OmY5SjxVKzFzN0hpYjZwO3Q8Tz0tcCptZFVeOzZGWGo8RCFTTEJTPl1RLlNtPzhqPl8oQEJdMkZiI0lnTHUlV3VXalBXTF5da1ptU29GR0hHZVNNIjI+JGJVS1xgQkhFKiRRb1gwPlRrb1ZROFRKVV1JYVhMcig3L08oaGtFQk4wLTBnPGEwRyRmazBhWT1aIzo1QGxyaSsuZCxZPUhEa1A9cU80UjpAO3FqbGJnWHRzNTp0J2lOMmBNTW9IQiw3Jj1zQCE4ZEdbJzZjLGZTSy9GZzFUT2xJYyYqVCM7VF5UOkItQTYvXDRebzNNZHI2PWtgR1xiRFFGY1ZrME9vczVoVURYXlBAUlpzKDo1XF0vPDlncTE3JEYhJlM3YUFoZU8tK3EnajJBJkJlNV8+TFpKcjtwa0NlamxaLTMzR0wsJkk1MWBSND1CWzZgODZAbjJeZVxAOitKJ2pBQyEiTk01KzRmcihZMFxsO2NXLlJaLHFtczRgcG1CNEFVNDkzRkczQTtDMUw2NFUiWEk5c2pYcTdSdWQ2WkhaRD5cPk84Pzc7W2xZJ2pFckd0JVYnYW0zWiozMko9ZEVPWmROKDAtJXRLRzksbDRRSXVPJ14/Lyk1Y3RpXGg0c0E5NDclbTVlakAwIW42KVhdXU4kNzA7Y2VMRS5lZTc9TEBZVTVMZGs7MVEvRDUvQERoPCNbJ2VpVGpEO0UyKStnYF0sQFBdQyE8bVAuLDhTPE5zI1RLJ0VKREJhXkdtWzFHJk1ZUmFsOUxrI1VfLUZmaEUxZTNqcDknLylWMz1dMjlqZ2ZzWCFlYSswNjg2V0c+RDBqXltdNzxnZjFXaTY1TipsY2xxXHByNF49M1VBR2UpWS4/QStoVDYhVlBiQEpcczMsYUphLjY4KG5cWWs/Sl88bzNSQSIkSFklQSs+KipLRjRJKDFYYzdPUVpUP29oaGxNbFVpI0czcFA3VVBINlU7R2o7KC49ZDNSJlRfOSRdSiEkKCFVQmcsVzg/cERjMzFrLSQuRmxHLk5tbzgpLEY6PGw8U2ZQPztbNiMycGc5Lz1PXSZjZkE3KnNWOEopclAoVSpZc0lgVjhyWzM3YnRlRE0lNjBLTkg+IT4nXmZcOWosRDUwYTNBW0VvKVRPKVsndUctciU5KU07bSMrRkFYVFR0UiM/bTdpXUEuXVxLZkJfaDczLktpRz5bJTdLJFl1NCxUUiVYTUkzK21XKyJGbGZsR21nQ1pCaEs0cV1rRVJVTilNSVxFMktwXVUkSWxaUVRRcHBhVD0qR2xlbkE3T1piUF0wOlpCbEUhVWxiOm1WJlQnWz5XQyJwR1lFQ05DWWolYm9SNT0jcmJJclJkUmEpLHMyOFdKSHAjS1liN1JCKWw1Kzw1OURLQnAlZVQ6XTpAPG0kWlkiKSc6RD5mLTwyUlprTzgvMWVtJ2huPXJjU21ZW0FeQzlzNjdcRzpLNiViYE50I2VnVlJSciVsVnRdKiFcWic/YE8tQHA0KFouWWtUMGcvNWQ1fj5lbmRzdHJlYW0KZW5kb2JqCjE0IDAgb2JqCjw8Ci9GaWx0ZXIgWyAvQVNDSUk4NURlY29kZSAvRmxhdGVEZWNvZGUgXSAvTGVuZ3RoIDIzMzIKPj4Kc3RyZWFtCkdiISNdPWBgPVUmOlhBV2ZWYVxWWiJPLU1lIUlYW1MyY11SWi40IllpdG1OJy0scFh1bj9DcE9xQ1ZjPjEuQFY5YGAncDw2bkdSU2ZQZSMiODpmXGBXcjxPWyEnZWZmbSIsOk0wWTdMJykmQ0ZbXzdTQ0JmK1olWmpVXl4sP0cvUVhDdFA+dGklZjgiZ0U8KlZfJkAtJSlVLFVbQWg4USInPmprTFJrQEsvPVk7PHNAPUJYMzdxbnE6MUB0aS5RczthWF9yT3UoZjZMTyYzUD1ITjpkZEVBO0xmX0tcLGE7JE10QjFJZ1hlLlYhamB0bDMqRFBjJkRzOWhJY3AkOStsRXRjQXNaUzwqcVNTPSRhVVYkSk0hcVk+LkRLRDo9XHQiPnImZEpEKTJcckBQQ0coYGBidV43YmJCXGlfW3M/ajlDMm4mcjdfZztMQVdlWCROZCZpWlFjRSUtJDMrJGJOJSIkKkYwQlBhXCtKWVZzaDYkYV1ka2lDX0ZlOFgmQkQmVl0qYjpTOHRXKFg7Z24/KkFxJyttIiE6XnMvWyFBXFlhXSZRM0xRRzpfTFcvT2Y6b25ELyhiQF1oVWZhN1BSOiNndEM7IiEwYWlgNCY9TFFKNF8ySy5wV2lZazZbTGdkV0wvX2Z1S1cxcyYwJ19lZyM8akUkWFk+UUJnJFEqTz00amEuQ2pmdG1tNm8uVU9DIzZYdGI7J0BdXk1eWzhRNHNiRC1EInQwOWRuQ1guT2ZaSGZhKz0hdDxvSidGO1JrPmtaWFVIWj1eSidvUFI+VDVUVTZFb0xpZzJOPmY9MVhmPUVURXBASjYkMS51WVA8aDNIVD1yYj8sKnBOQHJHW0JDdFFLWGNIVGsiMzhkTm0hWT9PPEE4K1pHPz9lMFFsJVE2cyUlYk11cEhoXzpDayhHKnJnOkBXQ2hNQDwzLW5YIldFXF5QOzdQS0g4VDRMZ2suMGZrKEY2LDZFSEhBRVtPUWZxXVpyMF4ra1s6VGRZLm5sZUdpRExgKWZTTUZNPWFWWiRrWF5TN0E0LGlAcnM4KyJVNDskVE1aUFdnI18lUHQ5I11EXDhwMUtcQSYua3RhRVxWckwjclsjaCcxT2xPUEdIR18kWSh0PmJcOitnNG9EMVVqXlYrMmI9Y1dnTCpQaiVJVkwsZShXZWlmN1FpZ042PVVpVWhHWEFqN3RpbEFYWD0mUTpYaF8iRnBdVlJbNi1RQmZJY0E/QEBvYGA0bXNYcTpcYUI9ck0wLiU7K25cKi5xZyRTXU4uTklWQHJAOS1FbzNTP2NkXWNlOSkqZUhGJzAnQ1xSLFc5R0ddO05DYFduYlRvYU9yaWFQWDNRRFwsaHFpbkJzUiZtW2UoJFArPT9iJT9cVUBPbGY/JzkmckdScjA4JUFiR1Jzb1M2KFk7QWIzRVEsOWUva1pMPG9eL2NoaEFANy8zWVEvUFZjJSJGUGpvS2AjME1ab2JvPm9NOG8tJExudDdxKlVGNzNXXCtwTHVpPlw6JiM/cnMmKThvXnNLQ0dCY2B1YihOR2tXbEUlcWVhWlRpIS86PGEtKD9rIzE2X2M4aFhiYF5OPlUoI14uWm8rSlZQbGpAZD9LNC5KQ3VFcmIzQypLbkk9I0I7VFQwPVZFQ1YlV18nQDxYSy5HblBDUVlOKj0tY04zaTpTTlNZbnBzWCw7KzRsMEtmWz42YiFLNmNzXCZXbzZTKlVAKV5kNW9sPjJjcGU3Qz9kIUxSPUhKaShlK0RDTW8uYW4zRThEYUA/OlgzWDZTNTkoRDknUW5rNF4mUGVvUWVEbzslMFk0OlRbYSRDUkx0JWNCZEk4NStXazZtLlUtbixaMURrc1spOU5jXSZCNnRYRGNSZSFzJzEyZU1oblQ6QEdJKFBySTQ2dHBVW1E5ZEteRCFuJDtHaGhFaC9BZzBaUWJBYj1WdFlPOkVvRjUpK0YlVlVfMkxXVVNdSzNdQkVcTTQiXShPYFFyMU9BS29zS0FxXVU6JihqXi5AKExjaztJV2tccm9OXkVrXWVEVWhUaEQ9JmZVJSM9TC50S2NqJGpdUWtNPjw8MHNCTUM/OyRlSUZSTGctLz8wODojXVo3NEhATVcxOGpTMzNvJGFfWikrYTdDWi0lUl0kMmVGYk1qNTNmNC1wUFkyS20xSCpsNVxldS1fJUJdXyRETGNXJiQrPz4xLjgoIz9caGBNZkZmX0xqRj1tUSxWVVNVMCchLWpaVmpeQzhqM10vWkdYay1DPTNWSm5PNTs4QysiLCEnXyJENSRqXjgkPXMnKzZSP1J0UVFLZHUwJyhfJkQpJiVHOS5NSl5VOiRKJidUKWJDK3Q4blU/ZyZmMlcmLHJrRD1OUStjUmkmRm8mUGk3aWx0TjBhOzteZi1TTT1GJ1F0aEIyVUZtbWxsRFtrTj9qbl4+JXUhLW1dbWZuW14zSEViJi9pcUBNW3FbLE01YV8oUmROXmktbDE6a3AhPWdvXixbVWIiWk02Jy84SGZuLWxOS1ZSKEMhRVtBSUkhbFNSVzVbRStKSC8iVC9PPkZZOSpEK0hQWFokN2llTTxBOCwjTylNdE8tYT07SiJQZGA6P2ZrPiIyPHBIZyU8S3FvXlR0UCxOWStCTSc+aU0sMVUiKzovaGpjZXFoPnBFJzhpPzBfcWx1LmVTT28kWkIhUC4ncFQ/IismR0NMZjhkJz8kKlQlTlQlLyJyZEZqal0/V2tgXS5mOm9dVmBrP3Q3SzAlWEIxN3UiNmdfMGNeSF44SlAtdCZUQj8hKFdVaTBsO3FkOSNmbEgmdWthLEUtI1Q8Yz9wcWlBJSJBaj1SX2E6cSVXUihPKmllaiJCWmY1dSFwTHJgNS9PcDtQOCcvayRVMmI4UFcpPHFjJEQ+O2M1U0ZnNDQzbUxBIVopbkkmIUdhQGdZTjdnTlVWWTs5LDJVXVZlbDtwMD8uNlM5NiknN0s8YVMwIj5rdFMvT109cXU1TEc1Yy5rRjBGMmM0LCMyXyJtbjhJVEttdTl0TSZcLkUuQmRVOHJeTz1fcVIiKnFQcSNPVU11YDhkIjRbVDlhOVpoTWlYXGZCUklVZkJWUUIiIjQqTDlVW2s8fj5lbmRzdHJlYW0KZW5kb2JqCnhyZWYKMCAxNQowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwNjEgMDAwMDAgbiAKMDAwMDAwMDE0MiAwMDAwMCBuIAowMDAwMDAwMjQ5IDAwMDAwIG4gCjAwMDAwMDAzNjEgMDAwMDAgbiAKMDAwMDAwMDQzOCAwMDAwMCBuIAowMDAwMDAwNTQzIDAwMDAwIG4gCjAwMDAwMDA2MjYgMDAwMDAgbiAKMDAwMDAwMDgzMSAwMDAwMCBuIAowMDAwMDAwOTQ2IDAwMDAwIG4gCjAwMDAwMDExNTEgMDAwMDAgbiAKMDAwMDAwMTIyMSAwMDAwMCBuIAowMDAwMDAxNTAyIDAwMDAwIG4gCjAwMDAwMDE1NjggMDAwMDAgbiAKMDAwMDAwMzU1NiAwMDAwMCBuIAp0cmFpbGVyCjw8Ci9JRCAKWzxjZGNlMjA1YmFlMWQzYWNlMmQwMzdjZTNjYWI5MjFiMT48Y2RjZTIwNWJhZTFkM2FjZTJkMDM3Y2UzY2FiOTIxYjE+XQolIFJlcG9ydExhYiBnZW5lcmF0ZWQgUERGIGRvY3VtZW50IC0tIGRpZ2VzdCAob3BlbnNvdXJjZSkKCi9JbmZvIDExIDAgUgovUm9vdCAxMCAwIFIKL1NpemUgMTUKPj4Kc3RhcnR4cmVmCjU5ODAKJSVFT0YK";
+
+function downloadDocPDF() {
+  // Decode base64 → binary → Blob → download — no external file needed
+  const bin  = atob(DOC_PDF_B64);
+  const buf  = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+  const a = Object.assign(document.createElement('a'), {
+    href: URL.createObjectURL(new Blob([buf], {type: 'application/pdf'})),
+    download: 'SecStruct_Overview.pdf'
+  });
+  a.click(); URL.revokeObjectURL(a.href);
+}
+
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function sanitizeId(s){return s.replace(/[^a-zA-Z0-9_-]/g,'_');}
+</script>
+</body>
+</html>
